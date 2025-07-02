@@ -77,38 +77,8 @@
                 </div>
                 <div>
                     <h2 class="text-xl font-semibold border-b-2 border-sky-500 pb-2 mb-6 text-white">Jogadores</h2>
-                    <div class="space-y-6">
-                        <div class="p-4 bg-slate-800/80 rounded-lg border border-slate-700">
-                            <h3 class="font-bold text-lg text-sky-400 mb-3">Capitão</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <input type="text" placeholder="Nome Completo" name="captain_name" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
-                                <input type="text" placeholder="Riot ID#TAG" name="captain_riotId" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
-                                <input type="text" placeholder="Discord ID#1234" name="captain_discordId" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
-                            </div>
-                             <div class="mt-4"><input type="email" placeholder="E-mail de Contato" name="captain_email" class="w-full bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required></div>
-                        </div>
-                        <div id="playersContainer" class="space-y-4"></div>
-                    </div>
-                </div>
-                <div>
-                    <h2 class="text-xl font-semibold border-b-2 border-sky-500 pb-2 mb-6 text-white">Reservas (Obrigatório)</h2>
-                    <div class="space-y-4">
-                       <div class="p-4 bg-slate-800/80 rounded-lg border border-slate-700">
-                            <h3 class="font-semibold text-md text-gray-300 mb-3">Reserva 1</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <input type="text" placeholder="Nome Completo" name="reserve1_name" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
-                                <input type="text" placeholder="Riot ID#TAG" name="reserve1_riotId" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
-                                <input type="text" placeholder="Discord ID#1234" name="reserve1_discordId" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
-                            </div>
-                        </div>
-                         <div class="p-4 bg-slate-800/80 rounded-lg border border-slate-700">
-                            <h3 class="font-semibold text-md text-gray-300 mb-3">Reserva 2 / Coach</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <input type="text" placeholder="Nome Completo" name="coach_name" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
-                                <input type="text" placeholder="Riot ID#TAG" name="coach_riotId" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
-                                <input type="text" placeholder="Discord ID#1234" name="coach_discordId" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
-                            </div>
-                        </div>
+                    <div class="space-y-6" id="allPlayersContainer">
+                        <!-- Jogadores serão gerados aqui -->
                     </div>
                 </div>
                 <div class="pt-6 border-t border-sky-500/50">
@@ -151,14 +121,13 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // Configuração do Firebase com as suas chaves
         const firebaseConfig = {
-          apiKey: "AIzaSyCU9b7wbEkJPHZbEV22OQYaneO1he3lWYI",
-          authDomain: "torneio-ilha-do-spot.firebaseapp.com",
-          projectId: "torneio-ilha-do-spot",
-          storageBucket: "torneio-ilha-do-spot.appspot.com",
-          messagingSenderId: "127869514911",
-          appId: "1:127869514911:web:0117b9e09f2d64aa83deaa"
+            apiKey: "AIzaSyCU9b7wbEkJPHZbEV22OQYaneO1he3lWYI",
+            authDomain: "torneio-ilha-do-spot.firebaseapp.com",
+            projectId: "torneio-ilha-do-spot",
+            storageBucket: "torneio-ilha-do-spot.appspot.com",
+            messagingSenderId: "127869514911",
+            appId: "1:127869514911:web:0117b9e09f2d64aa83deaa"
         };
 
         let db;
@@ -174,21 +143,56 @@
             }
         }
 
-        // --- Geração Dinâmica dos Campos de Jogador ---
-        const playersContainer = document.getElementById('playersContainer');
-        for (let i = 2; i <= 5; i++) {
-            playersContainer.innerHTML += `
+        const allPlayersContainer = document.getElementById('allPlayersContainer');
+        const elos = ["Ferro", "Bronze", "Prata", "Ouro", "Platina", "Diamante", "Ascendente", "Imortal", "Radiante"];
+        
+        function createEloSelect(name) {
+            const select = document.createElement('select');
+            select.name = name;
+            select.className = "w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2";
+            select.required = true;
+            
+            const defaultOption = document.createElement('option');
+            defaultOption.value = "";
+            defaultOption.textContent = "Selecione o Elo";
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            select.appendChild(defaultOption);
+
+            elos.forEach(elo => {
+                const option = document.createElement('option');
+                option.value = elo;
+                option.textContent = elo;
+                select.appendChild(option);
+            });
+            return select.outerHTML;
+        }
+
+        function createPlayerCard(role, idPrefix) {
+            const isCaptain = idPrefix === 'captain';
+            return `
                 <div class="p-4 bg-slate-800/80 rounded-lg border border-slate-700">
-                    <h3 class="font-semibold text-md text-gray-300 mb-3">Jogador ${i}</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <input type="text" placeholder="Nome Completo" name="player${i}_name" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
-                        <input type="text" placeholder="Riot ID#TAG" name="player${i}_riotId" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
-                        <input type="text" placeholder="Discord ID#1234" name="player${i}_discordId" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
+                    <h3 class="font-bold text-lg ${isCaptain ? 'text-sky-400' : 'text-gray-300'} mb-3">${role}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" placeholder="Nome Completo" name="${idPrefix}_name" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
+                        <input type="text" placeholder="Riot ID#TAG" name="${idPrefix}_riotId" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
                     </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <input type="text" placeholder="Discord ID#1234" name="${idPrefix}_discordId" class="bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required>
+                        ${createEloSelect(`${idPrefix}_elo`)}
+                    </div>
+                    ${isCaptain ? `<div class="mt-4"><input type="email" placeholder="E-mail de Contato" name="captain_email" class="w-full bg-slate-800 border-slate-700 rounded-lg px-3 py-2" required></div>` : ''}
                 </div>`;
         }
         
-        // --- Lógica do Formulário ---
+        let html = createPlayerCard('Capitão', 'captain');
+        for (let i = 2; i <= 5; i++) {
+            html += createPlayerCard(`Jogador ${i}`, `player${i}`);
+        }
+        html += createPlayerCard('Reserva 1', 'reserve1');
+        html += createPlayerCard('Reserva 2 / Coach', 'coach');
+        allPlayersContainer.innerHTML = html;
+        
         const form = document.getElementById('registrationForm');
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -203,15 +207,22 @@
             document.getElementById('buttonLoading').classList.remove('hidden');
 
             const formData = new FormData(form);
+            const getPlayerData = (prefix) => ({
+                name: formData.get(`${prefix}_name`),
+                riotId: formData.get(`${prefix}_riotId`),
+                discordId: formData.get(`${prefix}_discordId`),
+                elo: formData.get(`${prefix}_elo`),
+                ...(prefix === 'captain' && { email: formData.get('captain_email') })
+            });
+
             const registrationData = {
-                teamName: formData.get('teamName'), teamTag: formData.get('teamTag'),
-                captain: { name: formData.get('captain_name'), riotId: formData.get('captain_riotId'), discordId: formData.get('captain_discordId'), email: formData.get('captain_email') },
-                players: Array.from({length: 4}, (_, i) => ({ name: formData.get(`player${i+2}_name`), riotId: formData.get(`player${i+2}_riotId`), discordId: formData.get(`player${i+2}_discordId`) })),
-                reserves: [
-                    { role: 'Reserva 1', name: formData.get('reserve1_name'), riotId: formData.get('reserve1_riotId'), discordId: formData.get('reserve1_discordId') },
-                    { role: 'Reserva 2 / Coach', name: formData.get('coach_name'), riotId: formData.get('coach_riotId'), discordId: formData.get('coach_discordId') }
-                ],
+                teamName: formData.get('teamName'),
+                teamTag: formData.get('teamTag'),
+                captain: getPlayerData('captain'),
+                players: [getPlayerData('player2'), getPlayerData('player3'), getPlayerData('player4'), getPlayerData('player5')],
+                reserves: [getPlayerData('reserve1'), getPlayerData('coach')],
                 submittedAt: new Date().toISOString(),
+                isReviewed: false
             };
 
             try {
@@ -229,7 +240,6 @@
             }
         });
 
-        // --- Lógica do Modal ---
         const modal = document.getElementById('feedbackModal');
         const closeModalBtn = document.getElementById('closeModal');
         function showFeedbackModal(isSuccess, title, message) {
